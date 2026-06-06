@@ -410,20 +410,29 @@ def tool_get_assignment_statistics(course_id: str, assignment_id: str) -> str:
 
 @mcp.tool()
 def tool_get_submission_grading_context(
-    course_id: str, question_id: str, submission_id: str
+    course_id: str,
+    question_id: str,
+    submission_id: str,
+    include_page_urls: bool = False,
 ) -> str:
     """Get full grading context for a question submission.
 
     Returns current rubric items (with IDs), applied evaluations, score,
     comments, point adjustment, navigation URLs (next/prev/ungraded),
-    and submission page images. Use this before applying grades.
+    and submission page numbers. Use this before applying grades.
 
     Args:
         course_id: The Gradescope course ID.
         question_id: The question ID.
         submission_id: The question submission ID.
+        include_page_urls: When True, include the signed page-image URLs.
+            They are long and expire quickly, so they are omitted by default;
+            page numbers are always shown. Use cache_relevant_pages /
+            smart_read_submission to fetch page images.
     """
-    return get_submission_grading_context(course_id, question_id, submission_id)
+    return get_submission_grading_context(
+        course_id, question_id, submission_id, include_page_urls=include_page_urls
+    )
 
 
 @mcp.tool()
@@ -436,6 +445,7 @@ def tool_apply_grade(
     comment: str | None = None,
     confidence: float | None = None,
     confirm_write: bool = False,
+    full_credit: bool = False,
 ) -> str:
     """Apply a grade to a student's question submission.
 
@@ -448,7 +458,8 @@ def tool_apply_grade(
         submission_id: The question submission ID.
         rubric_item_ids: List of rubric item IDs to apply (checked). Items NOT
             in this list will be unchecked. ``None`` keeps current rubric
-            state; ``[]`` clears all applied items.
+            state; ``[]`` clears all applied items (which leaves the submission
+            ungraded — use ``full_credit=True`` for full marks).
         point_adjustment: Submission-specific point adjustment. Pass None to keep.
         comment: Per-submission comment (Gradescope's "Provide comments
             specific to this submission" field). ``None`` keeps current,
@@ -458,6 +469,10 @@ def tool_apply_grade(
             Below 0.6 = rejected. 0.6-0.8 = warning. Above 0.8 = OK.
             Pass None to skip confidence gating (manual mode).
         confirm_write: Must be True to save the grade.
+        full_credit: When True, mark full credit by checking the question's
+            0-point benchmark item (negative scoring only). Use instead of an
+            empty rubric_item_ids list, which does not mark the submission
+            graded. Cannot be combined with rubric_item_ids.
     """
     return apply_grade(
         course_id,
@@ -468,6 +483,7 @@ def tool_apply_grade(
         comment,
         confidence,
         confirm_write,
+        full_credit=full_credit,
     )
 
 
@@ -492,6 +508,9 @@ def tool_apply_grade_batch(
     - ``point_adjustment``: float | None (``None`` keeps current)
     - ``comment``: str | None (``None`` keeps current)
     - ``confidence``: float | None (per-row gate; < 0.6 is skipped)
+    - ``full_credit``: bool (mark full credit via the 0-point benchmark item;
+      use instead of ``[]``, which leaves the row ungraded; negative scoring
+      only; not combinable with ``rubric_item_ids``)
 
     Behavior:
     - ``confirm_write=False``: returns a compact preview table; no writes.

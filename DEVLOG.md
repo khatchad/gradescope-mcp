@@ -30,6 +30,47 @@
 
 ---
 
+## 2026-06-05: Make submission page-image URLs opt-in
+
+### What was done
+
+- `get_submission_grading_context` (and the `tool_` wrapper) gained an
+  `include_page_urls: bool = False` parameter. Markdown output now lists page
+  numbers and the relevant-pages hint by default and omits the signed
+  page-image URLs, which are multi-KB and expire quickly. Pass
+  `include_page_urls=True` to restore them. JSON output is unchanged.
+- Motivation: each grading-context call previously emitted several long signed
+  S3 URLs, a large token cost for data an agent typically fetches via
+  `cache_relevant_pages` / `smart_read_submission` instead.
+
+### Tests
+
+- Updated the markdown pages test for the new default and added a test for
+  `include_page_urls=True`. Suite: **68 passed**.
+
+---
+
+## 2026-06-05: Add a full_credit shortcut for grade writes
+
+### What was done
+
+- `apply_grade` and `apply_grade_batch` gained a `full_credit` flag. When set,
+  the submission is marked full credit by checking the question's single
+  0-point benchmark item — the action that actually marks it graded.
+- Motivation: passing `rubric_item_ids=[]` for full credit clears all items but
+  leaves the submission **ungraded** in Gradescope. `full_credit=True` does the
+  right thing without the caller having to look up the benchmark item ID.
+- Negative scoring only; refuses to guess when zero or multiple 0-point items
+  exist (asks for an explicit `rubric_item_ids`), and cannot be combined with
+  `rubric_item_ids`. The `tool_` wrappers expose the new option.
+
+### Tests
+
+- Added 5 tests (benchmark selection + payload, ambiguous/none errors,
+  mutual-exclusion guard, batch execution, batch preview). Suite: **72 passed**.
+
+---
+
 ## Session 9 — 2026-03-18: Full Project Audit And Documentation Refresh
 
 ### What was done
