@@ -13,7 +13,7 @@ simple CRUD wrappers.
 
 ## Current Snapshot
 
-- 41 tools (24 read-only, 13 Gradescope writes, 4 local cache writes)
+- 42 tools (24 read-only, 14 Gradescope writes, 4 local cache writes)
 - 3 resources (1 static, 2 URI templates)
 - 7 prompts
 - Offline pytest suite (the current count is recorded in `DEVLOG.md`)
@@ -272,16 +272,17 @@ nothing is sent.
 34. `tool_update_rubric_item`
 35. `tool_delete_rubric_item`
 36. `tool_set_question_scoring`
-37. `tool_grade_answer_group`
+37. `tool_respond_to_regrade_request`
+38. `tool_grade_answer_group`
 
 ### Local cache writes
 `readOnlyHint=false`, `destructiveHint=false`: they read Gradescope and
 write only to the private cache.
 
-38. `tool_prepare_grading_artifact`
-39. `tool_cache_relevant_pages`
-40. `tool_prepare_answer_key`
-41. `tool_export_lms_gradebook`
+39. `tool_prepare_grading_artifact`
+40. `tool_cache_relevant_pages`
+41. `tool_prepare_answer_key`
+42. `tool_export_lms_gradebook`
 
 All tools are `openWorldHint=true`.
 
@@ -427,6 +428,7 @@ Current test files:
 - `tests/test_question_settings.py`
 - `tests/test_page_selection.py`
 - `tests/test_read_side_fixes.py`
+- `tests/test_regrade_response.py`
 - `tests/test_round3_runtime.py`
 - `tests/test_server_mcp.py`
 - `tests/test_session_recovery.py`
@@ -446,10 +448,10 @@ npx @modelcontextprotocol/inspector uv run python -m gradescope_mcp
 1. Several endpoints are reverse-engineered and can break if Gradescope changes
    its frontend payloads. Where server behavior can't be observed offline,
    the code takes the conservative option and says so.
-2. `courses.py` uses a custom roster parser because upstream parsing is not
+3. `courses.py` uses a custom roster parser because upstream parsing is not
    reliable with sections.
 3. Some assignment types return 401 for extension APIs even for staff users.
-4. `get_next_ungraded` walks the question's own submissions listing and
+5. `get_next_ungraded` walks the question's own submissions listing and
    never follows links into another question.
 5. Cache artifacts are ephemeral files, not durable project state.
 6. mcp does not interrupt a tool call that the client cancels or that times
